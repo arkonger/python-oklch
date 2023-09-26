@@ -10,9 +10,10 @@ def _round(f, nDigits=0):
     mod = f - i
 
     if (mod >= 0.5):
-        return (i+1) / (10**nDigits)
-    else:
-        return i / (10**nDigits)
+        i += 1
+    if nDigits:
+        i /= (10**nDigits)
+    return i
 
 # RGB colors represented as triplets
 class RGB:
