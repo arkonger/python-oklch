@@ -126,3 +126,21 @@ class OKLCH:
 
     def to_css_string(self):
         return "oklch({:.2%} {:.3f} {:.2f})".format(self.l, self.c, self.h)
+
+def _print_to_term(color, CR=True):
+    if type(color) == list:
+        for c in color:
+            _print_to_term(c, False)
+        if CR:
+            print('')
+        return
+    elif type(color) != RGB:
+        color = color.to_RGB()
+    # 0x1b is an ANSI control code
+    print("\x1b[48;2;{};{};{}m \x1b[0m".format(
+            color.r,
+            color.g,
+            color.b),
+        end = '')
+    if CR:
+        print('')
