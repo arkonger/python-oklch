@@ -3,9 +3,9 @@ A module for python implementing the OKLCH color space as described by [Björn O
 
 ## Current Features: 
 - Create and use color objects in RGB, Hex, or OKLCH with the ability to easily convert between them. 
-- Find information about the shape of the OKLCH color space for a given hue such as the hue's cusp (point of maximum saturation), the maximum chroma for a given pair of hue and lightness, or the lightness extrema for a given pair of hue and chroma. 
+- Find information about the shape of the OKLCH color space for a given hue such as the hue's cusp (point of maximum saturation), the maximum chroma for a given lightness, or the lightness extrema for a given chroma. 
 - Use that shape information to perform relative operations on a color, such as lerping between its current and maximum possible chroma. 
-- Interpolate between colors to produce generally perceptually-smooth gradients. 
+- Interpolate between colors to produce more perceptually-smooth gradients. 
 
 ## Todo:
 - [x] ~~Create documentation~~
