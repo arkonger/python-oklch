@@ -2,6 +2,7 @@
 from .tools import find_cusp
 
 import math
+from random import choice
 
 # Converts an int to a hex string
 def _hex(i):
@@ -32,6 +33,7 @@ def _floor(f, nDigits=0):
 
 # The superclass is only used for type-checking and should not be used directly
 class Color: 
+    # These return a dummy color just so to eliminate an annoying warning. 
     def to_RGB(self): 
         return RGB(0, 0, 0)
     def to_Hex(self):
@@ -39,7 +41,10 @@ class Color:
     def to_OKLCH(self):
         return OKLCH(0, 0, 0)
 
-    def is_in_gamut(self): pass
+    def is_in_gamut(self):
+        return self.to_RGB().is_in_gamut()
+
+    def __str__(self): return ""
 
     ColorDict = { \
         'MediumVioletRed':      '#C71585',
@@ -184,6 +189,14 @@ class Color:
         'Gainsboro':            '#DCDCDC'
     }
 
+    @staticmethod
+    def get_web_color(color_name):
+        return Hex(Color.ColorDict[color_name])
+
+    @staticmethod
+    def get_random_web_color():
+        return Color.get_web_color(choice(list(Color.ColorDict.keys())))
+
 ###############################################################################
 #
 # Original license for RGB.to_OKLCH(), OKLCH._f(), OKLCH._f_inv(),
@@ -220,6 +233,9 @@ class RGB(Color):
 
     def __str__(self):
         return "rgb({}, {}, {})".format(self.r, self.g, self.b)
+
+    def to_RGB(self):
+        return self
 
     def to_Hex(self):
         return Hex("#{:0>2}{:0>2}{:0>2}".format(
@@ -268,12 +284,15 @@ class Hex(Color):
             int(self.hex_code[3:5], 16),
             int(self.hex_code[5:7], 16))
 
+    def to_Hex(self):
+        return self
+
     def to_OKLCH(self):
         return self.to_RGB().to_OKLCH()
 
     # Check whether the color is in-gamut
     def is_in_gamut(self):
-        return self.to_RGB().is_in_gamut()
+        return super().is_in_gamut()
 
 # OKLCH colors represented as triplets
 class OKLCH(Color):
@@ -346,9 +365,12 @@ class OKLCH(Color):
     def to_Hex(self):
         return self.to_RGB().to_Hex()
 
+    def to_OKLCH(self):
+        return self
+
     # Check whether the color is in-gamut
     def is_in_gamut(self):
-        return self.to_RGB().is_in_gamut()
+        return super().is_in_gamut()
 
     # Returns a css string which rounds in such a way as to guarantee an
     #   in-gamut color (presuming the original color was in-gamut, of course)

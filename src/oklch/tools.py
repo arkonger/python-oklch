@@ -150,10 +150,10 @@ def _max_saturation(a, b):
 # The minimum information needed for this function is simply a hue, which can
 #   either be specified directly or inferred from a color object. 
 # finds L_cusp and C_cusp for a given hue
-def find_cusp(color = None, hue = None):
+def find_cusp(hue=None, color=None):
 
     # Either color or hue may be provided, but exactly one is required. 
-    assert (color == None) ^ (hue == None), \
+    assert (hue == None) ^ (color == None), \
             "Exactly one of color or hue must be provided!"
 
     if hue != None:
@@ -516,7 +516,8 @@ def chromatize(t,
         C = _lerp(t, 0, max)
 
     else:
-        raise ValueError(f"Unknown method: '{method}'!")
+        raise ValueError(f"""Unknown method: '{method}'!
+Valid methods are 'relative' and 'absolute'.""")
 
     return colors.OKLCH(color.l, C, color.h)
 
@@ -527,39 +528,24 @@ def dechromatize(t,
                  lightness = None,
                  method = 'relative'):
 
-    assert (color == None) ^ (hue == None), \
-            "Exactly one of color or hue must be provided!"
-
-    if hue != None:
-        if not isinstance(hue, (float, int)):
-            raise ValueError(f"Expected number, received {type(lightness)}!")
-
-        assert lightness != None, \
-                "Lightness must be specified with explicit hue!"
-        if not isinstance(lightness, (float, int)):
-            raise ValueError(f"Expected number, received {type(lightness)}!")
-
-        assert method == 'absolute', \
-                "Explicit hue can only be specified with method 'relative'!"
-        # Generate a color object with the given parameters
-        color = colors.OKLCH(lightness, 0., hue)
-
-    else:
-        assert isinstance(color, colors.Color), \
-                f"Expected color, received {type(color)}!"
-        if not isinstance(color, colors.OKLCH):
-            color = color.to_OKLCH()
-
     # Negate t and chromatize
     if method == 'relative':
-        return chromatize(-t, color=color)
+        return chromatize(-t,
+                          color=color,
+                          hue=hue,
+                          lightness=lightness)
 
     # Reverse t and chromatize
     elif method == 'absolute':
-        return chromatize(1 - t, color=color, method='absolute')
+        return chromatize(1 - t,
+                          color=color,
+                          hue=hue,
+                          lightness=lightness,
+                          method='absolute')
 
     else:
-        raise ValueError(f"Unknown method: '{method}'!")
+        raise ValueError(f"""Unknown method: '{method}'!
+Valid methods are 'relative' and 'absolute'.""")
 
 # Chromatize, while technically more correct, is not a very appealing name, so
 #   brighten and dim are provided as aliases.
@@ -643,7 +629,8 @@ def lighten(t,
         L = _lerp(t, bounds[0], bounds[1])
 
     else:
-        raise ValueError(f"Unknown method: '{method}'!")
+        raise ValueError(f"""Unknown method: '{method}'!
+Valid methods are 'relative' and 'absolute'.""")
 
     return colors.OKLCH(L, color.c, color.h)
 
@@ -654,39 +641,24 @@ def darken(t,
            chroma = None,
            method = 'relative'):
 
-    assert (color == None) ^ (hue == None), \
-            "Exactly one of color or hue must be provided!"
-
-    if hue != None:
-        if not isinstance(hue, (float, int)):
-            raise ValueError(f"Expected number, received {type(chroma)}!")
-
-        assert chroma != None, \
-                "Lightness must be specified with explicit hue!"
-        if not isinstance(chroma, (float, int)):
-            raise ValueError(f"Expected number, received {type(chroma)}!")
-
-        assert method == 'absolute', \
-                "Explicit hue can only be specified with method 'relative'!"
-        # Generate a color object with the given parameters
-        color = colors.OKLCH(0.5, chroma, hue)
-
-    else:
-        assert isinstance(color, colors.Color), \
-                f"Expected color, received {type(color)}!"
-        if not isinstance(color, colors.OKLCH):
-            color = color.to_OKLCH()
-
     # Negate t and lighten
     if method == 'relative':
-        return lighten(-t, color=color)
+        return lighten(-t,
+                       color=color,
+                       hue=hue,
+                       chroma=chroma)
 
     # Reverse t and lighten
     elif method == 'absolute':
-        return lighten(1 - t, color=color, method='absolute')
+        return lighten(1 - t,
+                       color=color,
+                       hue=hue,
+                       chroma=chroma,
+                       method='absolute')
 
     else:
-        raise ValueError(f"Unknown method: '{method}'!")
+        raise ValueError(f"""Unknown method: '{method}'!
+Valid methods are 'relative' and 'absolute'.""")
 
 # Interpolate between two colors
 # Hue path is determined by method parameter
