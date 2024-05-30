@@ -13,6 +13,7 @@ A module for python implementing the OKLCH color space as described by [Björn O
 - [ ] Flesh out color objects with operators and such
     - [ ] Comparison (which method(s)?)
     - [x] ~~Subtraction for euclidean distance~~
+    - [ ] Add an actual OKLAB subclass to make it easier to work in rectangular space
 - [ ] Add additional tools, such as hue rotation, palette generation, nearest web color, etc
     - [ ] hue rotation
     - [ ] palette generation
