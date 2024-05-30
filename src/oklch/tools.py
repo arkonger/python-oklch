@@ -168,17 +168,17 @@ def find_cusp(hue=None, color=None):
         hue = color.h
 
     # a and b must be normalized so a^2 + b^2 == 1
-    a, b = colors.OKLCH._rect_normal(hue)
+    a, b = colors.OKLCH._get_normalized_ab(hue)
   
     # First, find the maximum saturation (saturation S = C/L)
     S_cusp = _max_saturation(a, b)
 
     # Convert to linear sRGB to find the first point where at least one of r,g,
     #   or b >= 1:
-    rgb_at_max = colors.OKLCH._polarize(1, S_cusp * a, S_cusp * b).to_RGB()
-    rgb_at_max.r = colors.OKLCH._f_inv(rgb_at_max.r/255)
-    rgb_at_max.g = colors.OKLCH._f_inv(rgb_at_max.g/255)
-    rgb_at_max.b = colors.OKLCH._f_inv(rgb_at_max.b/255)
+    rgb_at_max = colors.OKLAB(1, S_cusp * a, S_cusp * b).to_RGB()
+    rgb_at_max.r = colors.RGB._f_inv(rgb_at_max.r/255)
+    rgb_at_max.g = colors.RGB._f_inv(rgb_at_max.g/255)
+    rgb_at_max.b = colors.RGB._f_inv(rgb_at_max.b/255)
     L_cusp = math.pow(1. / max(rgb_at_max.r, rgb_at_max.g, rgb_at_max.b), 1/3)
     C_cusp = L_cusp * S_cusp
 
@@ -214,7 +214,7 @@ def _find_gamut_intersection(L1, C1,
         hue = color.h
 
     # a and b must be normalized so a^2 + b^2 == 1
-    a, b = colors.OKLCH._rect_normal(hue)
+    a, b = colors.OKLCH._get_normalized_ab(hue)
 
     # Find the cusp of the gamut triangle
     cusp = find_cusp(hue=hue)
@@ -450,7 +450,7 @@ def _lerp(t, a, b):
 # Generally speaking, a function which requires lightness, hue, or chroma can
 #   receive either explicit values for each, or a color object with the
 #   desired properties. A color object need not be OKLCH, and thus is the
-#   intended way to pass RGB/Hex colors. Many of the functions essentially
+#   intended way to pass RGB/HEX colors. Many of the functions essentially
 #   exist to tweak one of the characteristics of an OKLCH color by
 #   interpolating within certain bounds, and when that is the case the first
 #   argument is always the parameter for that lerp. Furthermore, a method can
@@ -459,6 +459,11 @@ def _lerp(t, a, b):
 #   which only considers the extrema. 
 #
 ###############################################################################
+
+# Type-checking used for all of the below:
+def __get_OKLCH_if_color(arg):
+    colors.Color.__is_color(arg)
+    return arg.to_OKLCH()
 
 # Lerps the chroma for the given color. Negative t dechromatizes if the method
 #   is relative
@@ -486,10 +491,7 @@ def chromatize(t,
         color = colors.OKLCH(lightness, 0., hue)
 
     else:
-        assert isinstance(color, colors.Color), \
-                f"Expected color, received {type(color)}!"
-        if not isinstance(color, colors.OKLCH):
-            color = color.to_OKLCH()
+        color = __get_OKLCH_if_color(color)
 
     # Find max chroma
     max = _find_chroma_max(color)
@@ -599,10 +601,7 @@ def lighten(t,
         color = colors.OKLCH(0.5, chroma, hue)
 
     else:
-        assert isinstance(color, colors.Color), \
-                f"Expected color, received {type(color)}!"
-        if not isinstance(color, colors.OKLCH):
-            color = color.to_OKLCH()
+        color = __get_OKLCH_if_color(color)
 
     # Find the min and max lightness
     bounds = _find_lightness_bounds(color)
@@ -664,15 +663,8 @@ Valid methods are 'relative' and 'absolute'.""")
 # Hue path is determined by method parameter
 def interpolate(t, color1, color2,
                 method = 'shortest'):
-    assert isinstance(color1, colors.Color), \
-            f"Expected color, received {type(color1)}!"
-    if not isinstance(color1, colors.OKLCH):
-        color1 = color1.to_OKLCH()
-
-    assert isinstance(color2, colors.Color), \
-            f"Expected color, received {type(color2)}!"
-    if not isinstance(color2, colors.OKLCH):
-        color2 = color2.to_OKLCH()
+    color1 = __get_OKLCH_if_color(color1)
+    color2 = __get_OKLCH_if_color(color2)
 
     # Get the lerped parameters
     l = _lerp(t, color1.l, color2.l)
@@ -707,9 +699,19 @@ def interpolate(t, color1, color2,
             h = _lerp(t, color1.h + 360, color2.h)
         else:
             h = _lerp(t, color1.h, color2.h)
+    elif method == 'use_OKLAB':
+        color1 = color1.to_OKLAB()
+        color2 = color2.to_OKLAB()
+
+        a = _lerp(t, color1.a, color2.a)
+        b = _lerp(t, color1.b, color2.b)
+        result = colors.OKLAB(l, a, b).to_OKLCH()
+
+        c = result.c
+        h = result.h
     else:
-        raise ValueError(f"""Unknown method '{method}'!
-Valid methods are 'shortest', 'longest', 'increasing', and 'decreasing'.""")
+        raise ValueError(f"""Unknown method '{method}'! Valid methods are:
+'shortest', 'longest', 'increasing', 'decreasing', and 'use_OKLAB'.""")
 
     ret = colors.OKLCH(l, c, h)
     # Make sure that the color is in-gamut
@@ -718,3 +720,26 @@ Valid methods are 'shortest', 'longest', 'increasing', and 'decreasing'.""")
     else:
         # Clip it into gamut
         return _find_gamut_intersection(l, c, hue=h)
+
+# Gamut clipping:
+def gamut_clip_hue_dependent(color):
+    _color = __get_OKLCH_if_color(color)
+    if color.is_in_gamut(): return color
+
+    return _find_gamut_intersection(_color.l, _color.c, color=_color)
+
+def gamut_clip_hue_independent(color):
+    _color = __get_OKLCH_if_color(color)
+    if color.is_in_gamut(): return color
+
+    return _find_gamut_intersection(_color.l, _color.c,
+                                    color=_color,
+                                    method='hue_dependent')
+
+def gamut_clip_preserve_lightness(color):
+    _color = __get_OKLCH_if_color(color)
+    if color.is_in_gamut(): return color
+
+    return _find_gamut_intersection(_color.l, _color.c,
+                                    color=_color,
+                                    method='preserve_lightness')

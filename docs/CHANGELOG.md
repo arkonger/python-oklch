@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.2.0
+- Overloaded `Color.__or__(self, other)` to get euclidean distance with pipe operator
+- Added `Color.get_nearest_web_color(color)` to get nearest web color
+- Renamed `Hex` subclass to `HEX` for consistency with other subclasses
+- Added `OKLAB` subclass
+- Overloaded `Color.__add__(self, other)` to get midpoint in OKLAB
+- Overloaded `Color.__neg__(self)` to get complement in OKLAB
+- Overloaded `Color.__sub__(self, other)` to add `self` with `other`'s complement
+- Added gamut clipping functions:
+    - `gamue_clip_hue_dependent(color)`
+    - `gamue_clip_hue_independent(color)`
+    - `gamue_clip_preserve_lightness(color)`
+
 ## v0.1.0
 Initial Release. 
 - Includes `Color` superclass and `RGB`, `Hex`, and `OKLCH` subclasses, as well as conversions between them. 
