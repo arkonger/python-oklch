@@ -9,9 +9,9 @@
 - Overloaded `Color.__neg__(self)` to get complement in OKLAB
 - Overloaded `Color.__sub__(self, other)` to add `self` with `other`'s complement
 - Added gamut clipping functions:
-    - `gamue_clip_hue_dependent(color)`
-    - `gamue_clip_hue_independent(color)`
-    - `gamue_clip_preserve_lightness(color)`
+    - `gamut_clip_hue_dependent(color)`
+    - `gamut_clip_hue_independent(color)`
+    - `gamut_clip_preserve_lightness(color)`
 
 ## v0.1.0
 Initial Release. 
