@@ -11,7 +11,13 @@ A module for python implementing the OKLCH color space as described by [Björn O
 - [x] ~~Create documentation~~
 - [ ] Read up on python module structure (is this layout in-line with best practices?)
 - [ ] Flesh out color objects with operators and such
+    - [ ] Comparison (which method(s)?)
+    - [x] ~~Subtraction for euclidean distance~~
 - [ ] Add additional tools, such as hue rotation, palette generation, nearest web color, etc
+    - [ ] hue rotation
+    - [ ] palette generation
+    - [x] ~~nearest web color~~
 - [ ] Do more testing on the interpolate() function to see if there are improvements to be made
+    - [ ] Add a `use_oklab` parameter or similar to allow true blending instead of rotating around
 - [ ] Standardize errors more (change `AssertionError`s to `ValueError`s?)
 - [ ] Is file IO beyond the scope of this project? Does an existing module sufficiently address the problem already? 

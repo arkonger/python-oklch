@@ -8,12 +8,14 @@ That being said, the `Color` superclass does contain a few useful members:
 - `ColorDict: {string → string}` is a dictionary of all 140 extended web colors, with keys being the colors' names and values being the colors' hex codes. 
 - `get_web_color(color_name): string → Hex` is a function which takes a color's name and returns a `Hex` color object with the corresponding hex code. 
 - `get_random_web_color():` returns a random web color as a `Hex` object. 
+- `get_nearest_web_color(color): Color → (string, OKLCH)` returns a tuple containing the name of the nearest web color to the provided color and an `OKLCH` object of that color. 
 
 In addition, the following member functions are defined and subsequently overloaded by each subclass: 
 - `__str__(self):` Overloads the `str()` function to return a string formatted according to the color type: 
     - `RGB.__str__(self): f"rgb({self.r}, {self.g}, {self.b})"`
     - `Hex.__str__(self): f"{self.hex_code}"`
     - `RGB.__str__(self): f"oklch({self.l}, {self.c}, {self.h})"`
+- `__sub__(self, other):` Overloads subtraction between colors to return the euclidean distance between them in the OKLCH color space. 
 - `to_RGB(self):` Converts the color to `RGB`
 - `to_Hex(self):` Converts the color to `Hex`
 - `to_OKLCH(self):` Converts the color to `OKLCH`

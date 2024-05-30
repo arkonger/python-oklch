@@ -3,6 +3,7 @@ from .tools import find_cusp
 
 import math
 from random import choice
+import heapq
 
 # Converts an int to a hex string
 def _hex(i):
@@ -45,6 +46,24 @@ class Color:
         return self.to_RGB().is_in_gamut()
 
     def __str__(self): return ""
+
+    # Subtraction yields the euclidean distance between the two
+    def __sub__(self, other):
+        if not isinstance(other, Color):
+            msg = "Expected colors, received '" + str(type(self)) \
+                    + "' and '" + str(type(other)) + "'!"
+            raise ValueError(msg)
+
+        # Convert both colors to oklab:
+        self = self.to_OKLCH()
+        s = self._rect()
+        other = other.to_OKLCH()
+        o = other._rect()
+
+        return math.pow((self.l - other.l)**2 + \
+                            (s[0] - o[0])**2 + \
+                            (s[1] - o[1])**2,
+                        0.5)
 
     ColorDict = { \
         'MediumVioletRed':      '#C71585',
@@ -197,6 +216,31 @@ class Color:
     def get_random_web_color():
         return Color.get_web_color(choice(list(Color.ColorDict.keys())))
 
+    @staticmethod
+    def get_nearest_web_color(color):
+        if not isinstance(color, Color):
+            raise ValueError(f"Expected color, received '{type(color)}'!")
+        color = color.to_OKLCH()
+
+        # Heap node
+        class Node:
+            def __init__(self, distance, color_name, color):
+                self.distance = distance
+                self.color_name = color_name
+                self.color = color
+
+            def __lt__(self, other):
+                return self.distance < other.distance
+
+        # Build minheap of the web colors by distance
+        heap = []
+        for k, v in Color.ColorDict.items():
+            c = Hex(v).to_OKLCH()
+            heapq.heappush(heap, Node(color - c, k, c))
+
+        ret = heapq.heappop(heap)
+        return (ret.color_name, ret.color)
+
 ###############################################################################
 #
 # Original license for RGB.to_OKLCH(), OKLCH._f(), OKLCH._f_inv(),
@@ -233,6 +277,9 @@ class RGB(Color):
 
     def __str__(self):
         return "rgb({}, {}, {})".format(self.r, self.g, self.b)
+
+    def __sub__(self, other):
+        return super().__sub__(other)
 
     def to_RGB(self):
         return self
@@ -278,6 +325,9 @@ class Hex(Color):
     def __str__(self):
         return self.hex_code
 
+    def __sub__(self, other):
+        return super().__sub__(other)
+
     def to_RGB(self):
         return RGB(
             int(self.hex_code[1:3], 16),
@@ -303,6 +353,9 @@ class OKLCH(Color):
 
     def __str__(self):
         return "oklch({}, {}, {})".format(self.l, self.c, self.h)
+
+    def __sub__(self, other):
+        return super().__sub__(other)
 
     # Functions for converting to linear RGB from standard RGB and vice versa
     @staticmethod
