@@ -51,12 +51,12 @@ class Color:
 
     # Checks that arg is color
     @staticmethod
-    def __is_color(arg):
+    def _is_color(arg):
         if not isinstance(arg, Color):
             raise ValueError(f"Expected color, received '{type(arg)}'!")
     # Addition gives the midpoint of the two colors in OKLAB space
     def __add__(self, other):
-        self.__is_color(other)
+        self._is_color(other)
 
         return self.to_OKLAB() + other.to_OKLAB()
     # Negation gives the complement in OKLAB space
@@ -64,13 +64,13 @@ class Color:
         return self.to_OKLAB().__neg__()
     # Subtraction gives the midpoint of self and complement of other
     def __sub__(self, other):
-        self.__is_color(other)
+        self._is_color(other)
 
         return self.to_OKLAB() - other.to_OKLAB()
 
     # Pipe operator yields the euclidean distance between two colors
     def __or__(self, other):
-        self.__is_color(other)
+        self._is_color(other)
 
         # Convert both colors to oklab:
         self = self.to_OKLAB()

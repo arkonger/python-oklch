@@ -462,7 +462,7 @@ def _lerp(t, a, b):
 
 # Type-checking used for all of the below:
 def __get_OKLCH_if_color(arg):
-    colors.Color.__is_color(arg)
+    colors.Color._is_color(arg)
     return arg.to_OKLCH()
 
 # Lerps the chroma for the given color. Negative t dechromatizes if the method
