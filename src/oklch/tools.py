@@ -550,8 +550,8 @@ def dechromatize(t,
 Valid methods are 'relative' and 'absolute'.""")
 
 # Chromatize, while technically more correct, is not a very appealing name, so
-#   brighten and dim are provided as aliases.
-def brighten(t, 
+#   detone and tone are provided as aliases.
+def detone(t, 
              color = None,
              hue = None,
              lightness = None,
@@ -563,7 +563,7 @@ def brighten(t,
                       lightness=lightness,
                       method=method)
 
-def dim(t, 
+def tone(t, 
         color = None,
         hue = None,
         lightness = None,
