@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2.1
+- Fixed a bug in color type checking
+
 ## v0.2.0
 - Overloaded `Color.__or__(self, other)` to get euclidean distance with pipe operator
 - Added `Color.get_nearest_web_color(color)` to get nearest web color
