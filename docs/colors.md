@@ -20,6 +20,7 @@ In addition, the following member functions are defined and subsequently overloa
 - `__add__(self, other):` Overloads addition to return the midpoint of the two colors in OKLAB color space. The return type is always the type of `self` *unless* `type(self)` is `HEX` and the result would produce an out-of-gamut color (and therefore a mangled hex code); in this case, an `RGB` color is returned instead to avoid possible ambiguity. 
 - `__neg__(self):` Overloads negation to get the complement in OKLAB color space (that is, the color `OKLAB(1-L, -a, -b)`). The return type is always the type of `self` *unless* `type(self)` is `HEX` and the result would produce an out-of-gamut color (and therefore a mangled hex code); in this case, an `RGB` color is returned instead to avoid possible ambiguity. 
 - `__sub__(self, other):` Overloads subtraction to return the midpoint in OKLAB color space of `self` and the complement of `other`. The return type is always the type of `self` *unless* `type(self)` is `HEX` and the result would produce an out-of-gamut color (and therefore a mangled hex code); in this case, an `RGB` color is returned instead to avoid possible ambiguity. 
+- `is_close(other):` Returns true if self and other would be represented with the same hex code
 - `to_RGB(self):` Converts the color to `RGB`
 - `to_HEX(self):` Converts the color to `HEX`
 - `to_OKLAB(self):` Converts the color to `OKLAB`

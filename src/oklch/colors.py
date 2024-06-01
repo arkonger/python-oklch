@@ -54,6 +54,9 @@ class Color:
     def _is_color(arg):
         if not isinstance(arg, Color):
             raise ValueError(f"Expected color, received '{type(arg)}'!")
+    # Checks that two colors are close
+    def is_close(self, other):
+        return self.to_HEX().hex_code == other.to_HEX().hex_code
     # Addition gives the midpoint of the two colors in OKLAB space
     def __add__(self, other):
         self._is_color(other)
@@ -291,6 +294,8 @@ class RGB(Color):
     def __str__(self):
         return "rgb({}, {}, {})".format(self.r, self.g, self.b)
 
+    def is_close(self, other):
+        return super().is_close(other)
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
         return super().__add__(other).to_RGB()
@@ -362,6 +367,8 @@ class HEX(Color):
     def __str__(self):
         return self.hex_code
 
+    def is_close(self, other):
+        return super().is_close(other)
     # Return type for addition and subtraction is type of first operand, unless
     #   the result is an invalid color, as this could result in a mangled hex
     #   code which is ambiguous. Therefore, these are left as RGB. 
@@ -408,6 +415,8 @@ class OKLAB(Color):
     def __str__(self):
         return f"oklab({self.l}, {self.a}, {self.b})"
 
+    def is_close(self, other):
+        return super().is_close(other)
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
         l = 0.5*(self.l + other.l)
@@ -468,6 +477,8 @@ class OKLCH(Color):
     def __str__(self):
         return "oklch({}, {}, {})".format(self.l, self.c, self.h)
 
+    def is_close(self, other):
+        return super().is_close(other)
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
         return super().__add__(other).to_OKLCH()
