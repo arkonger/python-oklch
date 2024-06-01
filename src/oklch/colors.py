@@ -260,7 +260,7 @@ class Color:
 
 ###############################################################################
 #
-# Original license for RGB.to_OKLAB(), RGB._f(), RGB._f_inv(), OKLAB.to_RGB():
+# Original license for RGB.to_OKLAB(), RGB._srgb_transfer_function(), RGB._srgb_transfer_function_inv(), OKLAB.to_RGB():
 #
 #   Copyright (c) 2021 Björn Ottosson
 #   
@@ -318,28 +318,28 @@ class RGB(Color):
 
     # Functions for converting to linear RGB from standard RGB and vice versa
     @staticmethod
-    def _f(x):
+    def _srgb_transfer_function(x):
         if (x >= 0.0031308):
             return (1.055) * math.pow(x, 1.0/2.4) - 0.055
         else:
             return 12.92 * x
     @staticmethod
-    def _f_inv(x):
+    def _srgb_transfer_function_inv(x):
         if (x >= 0.04045):
             return math.pow((x + 0.055)/(1 + 0.055), 2.4)
         else:
             return x / 12.92
 
     def to_OKLAB(self):
-        l = 0.4122214708 * self._f_inv(self.r/255) \
-                + 0.5363325363 * self._f_inv(self.g/255) \
-                + 0.0514459929 * self._f_inv(self.b/255)
-        m = 0.2119034982 * self._f_inv(self.r/255) \
-                + 0.6806995451 * self._f_inv(self.g/255) \
-                + 0.1073969566 * self._f_inv(self.b/255)
-        s = 0.0883024619 * self._f_inv(self.r/255) \
-                + 0.2817188376 * self._f_inv(self.g/255) \
-                + 0.6299787005 * self._f_inv(self.b/255)
+        l = 0.4122214708 * self._srgb_transfer_function_inv(self.r/255) \
+                + 0.5363325363 * self._srgb_transfer_function_inv(self.g/255) \
+                + 0.0514459929 * self._srgb_transfer_function_inv(self.b/255)
+        m = 0.2119034982 * self._srgb_transfer_function_inv(self.r/255) \
+                + 0.6806995451 * self._srgb_transfer_function_inv(self.g/255) \
+                + 0.1073969566 * self._srgb_transfer_function_inv(self.b/255)
+        s = 0.0883024619 * self._srgb_transfer_function_inv(self.r/255) \
+                + 0.2817188376 * self._srgb_transfer_function_inv(self.g/255) \
+                + 0.6299787005 * self._srgb_transfer_function_inv(self.b/255)
 
         l_ = math.pow(l, 1/3)
         m_ = math.pow(m, 1/3)
@@ -443,13 +443,13 @@ class OKLAB(Color):
         s = s_*s_*s_
 
         return RGB(
-            _round(RGB._f(+4.0767416621 * l \
+            _round(RGB._srgb_transfer_function(+4.0767416621 * l \
                     - 3.3077115913 * m \
                     + 0.2309699292 * s) * 255),
-            _round(RGB._f(-1.2684380046 * l \
+            _round(RGB._srgb_transfer_function(-1.2684380046 * l \
                     + 2.6097574011 * m \
                     - 0.3413193965 * s) * 255),
-            _round(RGB._f(-0.0041960863 * l \
+            _round(RGB._srgb_transfer_function(-0.0041960863 * l \
                     - 0.7034186147 * m \
                     + 1.7076147010 * s) * 255))
     def to_HEX(self):

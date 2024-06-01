@@ -176,9 +176,9 @@ def find_cusp(hue=None, color=None):
     # Convert to linear sRGB to find the first point where at least one of r,g,
     #   or b >= 1:
     rgb_at_max = colors.OKLAB(1, S_cusp * a, S_cusp * b).to_RGB()
-    rgb_at_max.r = colors.RGB._f_inv(rgb_at_max.r/255)
-    rgb_at_max.g = colors.RGB._f_inv(rgb_at_max.g/255)
-    rgb_at_max.b = colors.RGB._f_inv(rgb_at_max.b/255)
+    rgb_at_max.r = colors.RGB._srgb_transfer_function_inv(rgb_at_max.r/255)
+    rgb_at_max.g = colors.RGB._srgb_transfer_function_inv(rgb_at_max.g/255)
+    rgb_at_max.b = colors.RGB._srgb_transfer_function_inv(rgb_at_max.b/255)
     L_cusp = math.pow(1. / max(rgb_at_max.r, rgb_at_max.g, rgb_at_max.b), 1/3)
     C_cusp = L_cusp * S_cusp
 
