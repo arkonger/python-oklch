@@ -232,7 +232,8 @@ class Color:
         return HEX(Color.ColorDict[color_name])
     @staticmethod
     def get_random_web_color():
-        return Color.get_web_color(choice(list(Color.ColorDict.keys())))
+        name = choice(list(Color.ColorDict.keys()))
+        return name, Color.get_web_color(name)
     @staticmethod
     def get_nearest_web_color(color):
         if not isinstance(color, Color):
@@ -260,7 +261,11 @@ class Color:
 
 ###############################################################################
 #
-# Original license for RGB.to_OKLAB(), RGB._srgb_transfer_function(), RGB._srgb_transfer_function_inv(), OKLAB.to_RGB():
+# Original license for:
+#   - RGB.to_OKLAB()
+#   - RGB._srgb_transfer_function()
+#   - RGB._srgb_transfer_function_inv()
+#   - OKLAB.to_RGB()
 #
 #   Copyright (c) 2021 Björn Ottosson
 #   
@@ -397,7 +402,7 @@ class HEX(Color):
     def to_HEX(self):
         return self
     def to_OKLAB(self):
-        return self.to_OKLCH().to_OKLAB()
+        return self.to_RGB().to_OKLAB()
     def to_OKLCH(self):
         return self.to_RGB().to_OKLCH()
 
