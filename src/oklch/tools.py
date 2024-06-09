@@ -217,7 +217,12 @@ def _find_gamut_intersection(L1, C1,
     a, b = colors.OKLCH._get_normalized_ab(hue)
 
     # Find the cusp of the gamut triangle
-    cusp = find_cusp(hue=hue)
+    if abs(hue - 264) >= 1:
+        cusp = find_cusp(hue=hue)
+    else:
+        # This handles a strange case with blues where it can converge
+        #   out-of-gamut, resulting in an infinite loop.
+        cusp = colors.HEX('#023BFB').to_OKLCH()
 
     # Manual method allows for an explicit L0 value. 
     if method == 'manual':
@@ -250,6 +255,7 @@ def _find_gamut_intersection(L1, C1,
         # Lower half
 
         t = cusp.c * L0 / (C1 * cusp.l + cusp.c * (L0 - L1))
+        output = colors.OKLCH(L0 * (1 - t) + t * L1, t * C1, hue)
     else:
         # Upper half
 
@@ -322,9 +328,9 @@ def _find_gamut_intersection(L1, C1,
             t_b = t_b if u_b >= 0. else sys.float_info.max
 
             t += min(t_r, t_g, t_b)
-            output = colors.OKLCH(L0 * (1 - t) + t * L1, t * C1, hue).to_RGB()
+            output = colors.OKLCH(L0 * (1 - t) + t * L1, t * C1, hue)
 
-    return colors.OKLCH(L0 * (1 - t) + t * L1, t * C1, hue)
+    return output
 ###############################################################################
 #
 # The following two functions find the intersections of the line defined by:
@@ -521,7 +527,13 @@ def chromatize(t,
         raise ValueError(f"""Unknown method: '{method}'!
 Valid methods are 'relative' and 'absolute'.""")
 
-    return colors.OKLCH(color.l, C, color.h)
+    ret = colors.OKLCH(color.l, C, color.h)
+    # Make sure that the color is in-gamut
+    if ret.is_in_gamut():
+        return ret
+    else:
+        # Clip it into gamut
+        return gamut_clip_preserve_lightness(ret)
 
 # Simply reverses the direction of chromatize
 def dechromatize(t, 
@@ -551,7 +563,7 @@ Valid methods are 'relative' and 'absolute'.""")
 
 # Chromatize, while technically more correct, is not a very appealing name, so
 #   detone and tone are provided as aliases.
-def detone(t, 
+def detone(t,
              color = None,
              hue = None,
              lightness = None,
@@ -563,7 +575,7 @@ def detone(t,
                       lightness=lightness,
                       method=method)
 
-def tone(t, 
+def tone(t,
         color = None,
         hue = None,
         lightness = None,
@@ -631,7 +643,13 @@ def lighten(t,
         raise ValueError(f"""Unknown method: '{method}'!
 Valid methods are 'relative' and 'absolute'.""")
 
-    return colors.OKLCH(L, color.c, color.h)
+    ret = colors.OKLCH(L, color.c, color.h)
+    # Make sure that the color is in-gamut
+    if ret.is_in_gamut():
+        return ret
+    else:
+        # Clip it into gamut
+        return _find_gamut_intersection(L, color.c, hue=color.h)
 
 # Simply reverses the direction of chromatize
 def darken(t, 
@@ -659,7 +677,7 @@ def darken(t,
         raise ValueError(f"""Unknown method: '{method}'!
 Valid methods are 'relative' and 'absolute'.""")
 
-# Interpolate between two colors
+# Linearly interpolate between two colors
 # Hue path is determined by method parameter
 def interpolate(t, color1, color2,
                 method = 'shortest'):
@@ -719,7 +737,7 @@ def interpolate(t, color1, color2,
         return ret
     else:
         # Clip it into gamut
-        return _find_gamut_intersection(l, c, hue=h)
+        return gamut_clip_preserve_lightness(ret)
 
 # Gamut clipping:
 def gamut_clip_hue_dependent(color):

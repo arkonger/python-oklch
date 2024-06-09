@@ -20,7 +20,7 @@ A module for python implementing the OKLCH color space as described by [Björn O
     - [ ] palette generation
     - [x] ~~nearest web color~~
     - [x] ~~user-facing gamut clipping functions~~
-- [ ] Do more testing on the interpolate() function to see if there are improvements to be made
+- [x] Do more testing on the interpolate() function to see if there are improvements to be made
     - [x] ~~Add a `use_oklab` parameter or similar to allow true blending instead of rotating around lightness~~
 - [ ] Standardize errors more (change `AssertionError`s to `ValueError`s?)
 - [ ] Is file IO beyond the scope of this project? Does an existing module sufficiently address the problem already? 
