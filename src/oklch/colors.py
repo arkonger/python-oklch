@@ -3,6 +3,7 @@ from .tools import find_cusp
 
 import math
 from random import choice
+from sys import maxsize
 import heapq
 
 # Converts an int to a hex string
@@ -235,29 +236,33 @@ class Color:
         name = choice(list(Color.ColorDict.keys()))
         return name, Color.get_web_color(name)
     @staticmethod
-    def get_nearest_web_color(color):
+    def get_nearest_web_color(color, n=1):
         if not isinstance(color, Color):
             raise ValueError(f"Expected color, received '{type(color)}'!")
+        if not (isinstance(n, int) and n > 0):
+            raise ValueError("Expected a positive integer," \
+                                + f" received '{type(n)}'!")
         color = color.to_OKLCH()
 
-        # Heap node
-        class Node:
-            def __init__(self, distance, color_name, color):
-                self.distance = distance
-                self.color_name = color_name
-                self.color = color
+        # When n == 1, we can get the result faster by skipping the heap
+        if n == 1:
+            ret = (maxsize, None, None)
+            for k, v in Color.ColorDict.items():
+                c = HEX(v).to_OKLCH()
+                ret = min(ret, (color | c, k, c))
+            return (ret[1], ret[2])
+        else:
+            # Build minheap of the web colors by distance
+            heap = []
+            for k, v in Color.ColorDict.items():
+                c = HEX(v).to_OKLCH()
+                heapq.heappush(heap, (color | c, k, c))
 
-            def __lt__(self, other):
-                return self.distance < other.distance
-
-        # Build minheap of the web colors by distance
-        heap = []
-        for k, v in Color.ColorDict.items():
-            c = HEX(v).to_OKLCH()
-            heapq.heappush(heap, Node(color | c, k, c))
-
-        ret = heapq.heappop(heap)
-        return (ret.color_name, ret.color)
+            ret = []
+            for _ in range(n):
+                t = heapq.heappop(heap)
+                ret.append((t[1], t[2]))
+            return ret
 
 ###############################################################################
 #
