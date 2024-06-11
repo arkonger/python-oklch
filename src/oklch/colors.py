@@ -1,37 +1,12 @@
 # vim:foldmethod=indent:foldlevel=1
-from .tools import find_cusp
 
 import math
 from random import choice
 from sys import maxsize
 import heapq
 
-# Converts an int to a hex string
-def _hex(i):
-    return hex(i)[2:].upper()
-
-# Rounds using the typical rule of [x.0, x.5) -> x; [x.5, x+1) -> x+1
-def _round(f, nDigits=0):
-    f *= 10**nDigits
-
-    i = int(f)
-    mod = f - i
-    if (mod >= 0.5):
-        i += 1
-
-    if nDigits:
-        i /= (10.**nDigits)
-        return float(format(i, '.' + str(nDigits) + 'f'))
-    else:
-        return i
-# Rounds down to the given number of digits with no floating point weirdness
-def _ceil(f, nDigits=0):
-    f = math.ceil(f * 10**nDigits) / 10.**nDigits
-    return float(format(f, '.' + str(nDigits) + 'f'))
-# As above, but rounding up
-def _floor(f, nDigits=0):
-    f = math.floor(f * 10**nDigits) / 10.**nDigits
-    return float(format(f, '.' + str(nDigits) + 'f'))
+from oklch.tools import find_cusp
+from oklch import utils
 
 # The superclass is only used for type-checking and should not be used directly
 class Color: 
@@ -50,17 +25,12 @@ class Color:
 
     def __str__(self): return ""
 
-    # Checks that arg is color
-    @staticmethod
-    def _is_color(arg):
-        if not isinstance(arg, Color):
-            raise ValueError(f"Expected color, received '{type(arg)}'!")
     # Checks that two colors are close
     def is_close(self, other):
         return self.to_HEX().hex_code == other.to_HEX().hex_code
     # Addition gives the midpoint of the two colors in OKLAB space
     def __add__(self, other):
-        self._is_color(other)
+        utils.expect_color(other)
 
         return self.to_OKLAB() + other.to_OKLAB()
     # Negation gives the complement in OKLAB space
@@ -68,13 +38,13 @@ class Color:
         return self.to_OKLAB().__neg__()
     # Subtraction gives the midpoint of self and complement of other
     def __sub__(self, other):
-        self._is_color(other)
+        utils.expect_color(other)
 
         return self.to_OKLAB() - other.to_OKLAB()
 
     # Pipe operator yields the euclidean distance between two colors
     def __or__(self, other):
-        self._is_color(other)
+        utils.expect_color(other)
 
         # Convert both colors to oklab:
         self = self.to_OKLAB()
@@ -322,9 +292,9 @@ class RGB(Color):
         return self
     def to_HEX(self):
         return HEX("#{:0>2}{:0>2}{:0>2}".format(
-                _hex(self.r),
-                _hex(self.g),
-                _hex(self.b)))
+                utils.int_to_hex_string(self.r),
+                utils.int_to_hex_string(self.g),
+                utils.int_to_hex_string(self.b)))
 
     # Functions for converting to linear RGB from standard RGB and vice versa
     @staticmethod
@@ -453,13 +423,13 @@ class OKLAB(Color):
         s = s_*s_*s_
 
         return RGB(
-            _round(RGB._srgb_transfer_function(+4.0767416621 * l \
+            utils.round(RGB._srgb_transfer_function(+4.0767416621 * l \
                     - 3.3077115913 * m \
                     + 0.2309699292 * s) * 255),
-            _round(RGB._srgb_transfer_function(-1.2684380046 * l \
+            utils.round(RGB._srgb_transfer_function(-1.2684380046 * l \
                     + 2.6097574011 * m \
                     - 0.3413193965 * s) * 255),
-            _round(RGB._srgb_transfer_function(-0.0041960863 * l \
+            utils.round(RGB._srgb_transfer_function(-0.0041960863 * l \
                     - 0.7034186147 * m \
                     + 1.7076147010 * s) * 255))
     def to_HEX(self):
@@ -529,12 +499,12 @@ class OKLCH(Color):
         # Find which way is safe to round l
         cusp = find_cusp(hue=self.h)
         if self.l > cusp.l:
-            l = _floor(self.l, 4)
+            l = utils.floor(self.l, 4)
         else:
-            l = _ceil(self.l, 4)
+            l = utils.ceil(self.l, 4)
 
         # Always safe to floor c
-        c = _floor(self.c, 3)
+        c = utils.floor(self.c, 3)
 
         # Doesn't matter how h is rounded; it can go directly in format string
         return "oklch({:.2%} {:.3f} {:.2f})".format(l, c, self.h)

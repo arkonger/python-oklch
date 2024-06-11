@@ -1,31 +1,9 @@
 # vim:foldmethod=indent:foldlevel=1
-from . import colors
 
 import math
 import sys
 
-# Prints a color to terminal by setting the terminal background to that color
-#   using ANSI control codes
-def _print_to_term(color, CR=True):
-    if isinstance(color, (list, tuple)):
-        for c in color:
-            if isinstance(c, (list, tuple)):
-                _print_to_term(c, CR)
-            else:
-                _print_to_term(c, False)
-        if CR:
-            print('')
-        return
-    elif not isinstance(color, colors.RGB):
-        color = color.to_RGB()
-    # 0x1b is an ANSI control code
-    print("\x1b[48;2;{};{};{}m \x1b[0m".format(
-            color.r,
-            color.g,
-            color.b),
-        end = '')
-    if CR:
-        print('')
+from oklch import colors, utils
 
 # Several of the below functions are sourced from Björn Ottosson's blog posts
 #   which originally defined the OKLAB & OKLCH color spaces. For full
@@ -468,7 +446,7 @@ def _lerp(t, a, b):
 
 # Type-checking used for all of the below:
 def __get_OKLCH_if_color(arg):
-    colors.Color._is_color(arg)
+    utils.expect_color(arg)
     return arg.to_OKLCH()
 
 # Lerps the chroma for the given color. Negative t dechromatizes if the method
