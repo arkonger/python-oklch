@@ -153,10 +153,10 @@ def _max_saturation(a, b):
 def find_cusp(hue=None, color=None):
 
     # Either color or hue may be provided, but exactly one is required. 
-    assert (hue == None) ^ (color == None), \
+    assert (hue is None) ^ (color is None), \
             "Exactly one of color or hue must be provided!"
 
-    if hue != None:
+    if hue is not None:
         assert isinstance(hue, (float, int)), \
                 f"Expected number, received {type(hue)}!"
 
@@ -199,10 +199,10 @@ def _find_gamut_intersection(L1, C1,
                              method='hue_dependent'):
 
     # Either color or hue may be provided, but exactly one is required. 
-    assert (color == None) ^ (hue == None), \
+    assert (color is None) ^ (hue is None), \
             "Exactly one of color or hue must be provided!"
 
-    if hue != None:
+    if hue is not None:
         assert isinstance(hue, (float, int)), \
                 f"Expected number, received {type(hue)}!"
 
@@ -226,10 +226,10 @@ def _find_gamut_intersection(L1, C1,
 
     # Manual method allows for an explicit L0 value. 
     if method == 'manual':
-        assert L0 != None, \
+        assert L0 is not None, \
                 "L0 must be explicitly provided with method 'manual'!"
     else:
-        assert L0 == None, \
+        assert L0 is None, \
                 "L0 cannot be set explicitly unless using method 'manual'!"
 
         # The other methods specify how L0 should be set. 
@@ -479,14 +479,14 @@ def chromatize(t,
                lightness = None,
                method = 'relative'):
 
-    assert (color == None) ^ (hue == None), \
+    assert (color is None) ^ (hue is None), \
             "Exactly one of color or hue must be provided!"
 
-    if hue != None:
+    if hue is not None:
         if not isinstance(hue, (float, int)):
             raise ValueError(f"Expected number, received {type(lightness)}!")
 
-        assert lightness != None, \
+        assert lightness is not None, \
                 "Lightness must be specified with explicit hue!"
         if not isinstance(lightness, (float, int)):
             raise ValueError(f"Expected number, received {type(lightness)}!")
@@ -595,14 +595,14 @@ def lighten(t,
             chroma = None,
             method = 'relative'):
 
-    assert (color == None) ^ (hue == None), \
+    assert (color is None) ^ (hue is None), \
             "Exactly one of color or hue must be provided!"
 
-    if hue != None:
+    if hue is not None:
         if not isinstance(hue, (float, int)):
             raise ValueError(f"Expected number, received {type(chroma)}!")
 
-        assert chroma != None, \
+        assert chroma is not None, \
                 "Lightness must be specified with explicit hue!"
         if not isinstance(chroma, (float, int)):
             raise ValueError(f"Expected number, received {type(chroma)}!")
