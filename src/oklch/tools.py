@@ -1,49 +1,58 @@
 # vim:foldmethod=indent:foldlevel=1
 
+# TODO: __all__
+
 import math
 import sys
 
 from oklch import colors, utils
 
-# Several of the below functions are sourced from Björn Ottosson's blog posts
-#   which originally defined the OKLAB & OKLCH color spaces. For full
-#   information on how these functions work, you should read those posts. Other
-#   than translation, I have made only minimal changes to them. 
+# Several of the below functions are sourced from Björn Ottosson's blog
+# posts which originally defined the OKLAB & OKLCH color spaces. For
+# full information on how these functions work, you should read those
+# posts. Other than translation, I have made only minimal changes to
+# them.
 #
 # The original code can be found at:
 # https://bottosson.github.io/posts/gamutclipping/
-#   and the original license for _max_saturation(), find_cusp(), and
-#   _find_gamut_intersection() is printed below:
+# and the original license for
+# - _max_saturation()
+# - find_cusp()
+# - _find_gamut_intersection()
+# is printed below:
 #
-###############################################################################
+########################################################################
 #
 #   Copyright (c) 2021 Björn Ottosson
 #   
-#   Permission is hereby granted, free of charge, to any person obtaining a
-#   copy of this software and associated documentation files (the "Software"),
-#   to deal in the Software without restriction, including without limitation
-#   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-#   and/or sell copies of the Software, and to permit persons to whom the
-#   Software is furnished to do so, subject to the following conditions:
+#   Permission is hereby granted, free of charge, to any person
+#   obtaining a copy of this software and associated documentation files
+#   (the "Software"), to deal in the Software without restriction,
+#   including without limitation the rights to use, copy, modify, merge,
+#   publish, distribute, sublicense, and/or sell copies of the Software,
+#   and to permit persons to whom the Software is furnished to do so,
+#   subject to the following conditions:
 #   
 #       The above copyright notice and this permission notice shall be
 #       included in all copies or substantial portions of the Software.
 #   
 #       THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-#       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-#       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#       IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-#       CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-#       TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-#       SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+#       OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+#       NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+#       HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+#       WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+#       FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+#       OTHER DEALINGS IN THE SOFTWARE.
 #
-###############################################################################
+########################################################################
+
 
 def _max_saturation(a, b):
     # Max saturation will be when one of r, g or b goes below zero.
     
-    # Select different coefficients depending on which component goes below
-    #   zero first
+    # Select different coefficients depending on which component goes
+    # below zero first
     if (-1.88170328 * a - 0.80936493 * b > 1):
         # Red component
         k0 = +1.19086277
@@ -80,15 +89,15 @@ def _max_saturation(a, b):
         wm = -0.7034186147
         ws = +1.7076147010
 
-
     # Approximate max saturation using a polynomial:
     S = k0 + k1 * a + k2 * b + k3 * a * a + k4 * a * b
 
     # Do one step Halley's method to get closer
-    # this gives an error less than 10e6, except for some blue hues where the
-    #   dS/dh is close to infinite
-    # this should be sufficient for most applications, otherwise do two/three
-    #   steps 
+    # this gives an error less than 10e6, except for some blue hues
+    # where the dS/dh is close to infinite
+    #
+    # this should be sufficient for most applications, otherwise do
+    # two/three steps
 
     k_l = +0.3963377774 * a + 0.2158037573 * b
     k_m = -0.1055613458 * a - 0.0638541728 * b
@@ -119,17 +128,20 @@ def _max_saturation(a, b):
 
     return S
 
-# Although this function is primarily a translation of Ottosson's work, it is
-#   also a public function and therefore follows the convention set by the
-#   other public functions found later in this script -- that convention being
-#   to allow the user choice about how they provide the minimum necessary
-#   information for the function. More can be found with the other public
-#   functions below. 
-# The minimum information needed for this function is simply a hue, which can
-#   either be specified directly or inferred from a color object. 
-# finds L_cusp and C_cusp for a given hue
-def find_cusp(hue=None, color=None):
 
+# Although this function is primarily a translation of Ottosson's work,
+# it is also a public function and therefore follows the convention set
+# by the other public functions found later in this module -- that
+# convention being to allow the user choice about how they provide the
+# minimum necessary information for the function. More can be found
+# with the other public functions below.
+#
+# The minimum information needed for this function is simply a hue,
+# which can either be specified directly or inferred from a color
+# object.
+#
+# finds L_cusp and C_cusp for a given hue
+def find_cusp(*, hue=None, color=None):
     # Either color or hue may be provided, but exactly one is required. 
     assert (hue is None) ^ (color is None), \
             "Exactly one of color or hue must be provided!"
@@ -151,8 +163,8 @@ def find_cusp(hue=None, color=None):
     # First, find the maximum saturation (saturation S = C/L)
     S_cusp = _max_saturation(a, b)
 
-    # Convert to linear sRGB to find the first point where at least one of r,g,
-    #   or b >= 1:
+    # Convert to linear sRGB to find the first point where at least one
+    # of r,g, or b >= 1:
     rgb_at_max = colors.OKLAB(1, S_cusp * a, S_cusp * b).to_RGB()
     rgb_at_max.r = colors.RGB._srgb_transfer_function_inv(rgb_at_max.r/255)
     rgb_at_max.g = colors.RGB._srgb_transfer_function_inv(rgb_at_max.g/255)
@@ -162,19 +174,24 @@ def find_cusp(hue=None, color=None):
 
     return colors.OKLCH(L_cusp, C_cusp, hue)
 
-# I've similarly made this function more flexible for my own ease of use, even
-#   if it is not intended to be user-facing. 
-# The minimum information required is L1, C1, and some way of specifying hue.
-#   L0 is usually not required, since it can be inferred from the method;
-#   however, an option is given to provide an explicit L0 with method 'manual'. 
-# Finds intersection of the line defined by 
+
+# I've similarly made this function more flexible for my own ease of
+# use, even if it is not intended to be user-facing.
+#
+# The minimum information required is L1, C1, and some way of
+# specifying hue. L0 is usually not required, since it can be inferred
+# from the method; however, an option is given to provide an explicit
+# L0 with method 'manual'.
+#
+# Finds intersection of the line defined by:
 #   L = L0 * (1 - t) + t * L1;
 #   C = t * C1;
-def _find_gamut_intersection(L1, C1,
-                             color = None,
-                             hue = None,
-                             L0 = None,
-                             method='hue_dependent'):
+def _find_gamut_intersection(L1, C1, *,
+                             color=None,
+                             hue=None,
+                             L0=None,
+                             method='hue_dependent'
+                            ):
 
     # Either color or hue may be provided, but exactly one is required. 
     assert (color is None) ^ (hue is None), \
@@ -211,8 +228,10 @@ def _find_gamut_intersection(L1, C1,
                 "L0 cannot be set explicitly unless using method 'manual'!"
 
         # The other methods specify how L0 should be set. 
+        #
         # Method 'hue_dependent' moves the color towards the point
-        #   (cusp.l, 0, hue) until it intersects the gamut, which is default. 
+        # (cusp.l, 0, hue) until it intersects the gamut, which is
+        # default.
         if method == 'hue_dependent':
             L0 = cusp.l
 
@@ -220,8 +239,8 @@ def _find_gamut_intersection(L1, C1,
         elif method == 'hue_independent':
             L0 = 0.5
 
-        # Method 'preserve_lightness' does not alter lightness as long as it's
-        #   a valid value. 
+        # Method 'preserve_lightness' does not alter lightness as long
+        # as it's a valid value.
         elif method == 'preserve_lightness':
             L0 = min(1, max(0, L1))
 
@@ -253,9 +272,8 @@ def _find_gamut_intersection(L1, C1,
         m_dt = dL + dC * k_m
         s_dt = dL + dC * k_s
 
-
-        # If higher accuracy is required, 2 or 3 iterations of the following
-        #   block can be used:
+        # If higher accuracy is required, 2 or 3 iterations of the
+        # following block can be used:
         output = colors.OKLCH(L0 * (1 - t) + t * L1, t * C1, hue)
         while not output.is_in_gamut():
             L = L0 * (1. - t) + t * L1
@@ -309,39 +327,46 @@ def _find_gamut_intersection(L1, C1,
             output = colors.OKLCH(L0 * (1 - t) + t * L1, t * C1, hue)
 
     return output
-###############################################################################
+
+
+########################################################################
 #
-# The following two functions find the intersections of the line defined by:
+# The following two functions find the intersections of the line defined
+# by:
 #   L = color.l * (1 - t1) + t1 * L1
 #   C = color.c * (1 - t1) + t1 * C1
-# where either L1 == color.l or C1 == color.c. These are useful points for
-#   performing lightening or saturating operations within a given hue. 
+# where either L1 == color.l or C1 == color.c. These are useful points
+# for performing lightening or saturating operations within a given hue.
 # 
-# This differs from the above function in the C term, as for our purposes C0
-#   may not be equal to 0. This adds an additional unknown, but when
-#   considering the additional constraints:
-#       (L, C) = (0, 0) * (1 - t2) + t2 * (L_cusp, C_cusp); (lower half)
-#           OR
-#       (L, C) = (L_cusp, C_cusp) * (1 - t2) + t2 * (1, 0); (upper half)
-#   we end up with five unknowns and five functions nonetheless. 
+# This differs from the above function in the C term, as for our
+# purposes C0 may not be equal to 0. This adds an additional unknown,
+# but when considering the additional constraints:
+#   (L, C) = (0, 0) * (1 - t2) + t2 * (L_cusp, C_cusp); (lower half)
+#       OR
+#   (L, C) = (L_cusp, C_cusp) * (1 - t2) + t2 * (1, 0); (upper half)
+# we end up with five unknowns and five functions nonetheless.
 # 
-###############################################################################
+########################################################################
 #
-# For the first of our two functions, we take some color with chroma color.c
-#   which is less than the maximum possible in-gamut chroma for the given
-#   lightness color.l and hue color.h. This can be used with the trivially
-#   found minimum chroma of 0 to perform relative operations on a color's
-#   chroma. 
+# For the first of our two functions, we take some color with chroma
+# color.c which is less than the maximum possible in-gamut chroma for
+# the given lightness color.l and hue color.h. This can be used with the
+# trivially found minimum chroma of 0 to perform relative operations on
+# a color's chroma.
+#
 # Therefore, this function solves for chroma C given L1 == color.l:
 # => L = color.l
+#
 # then in the lower half case:
 #   (color.l, C) = t2 * (L_cusp, C_cusp)
 #   => t2 = (color.l, C) / (L_cusp, C_cusp) where (L_cusp, C_cusp) != 0
 #   => C / C_cusp = color.l / L_cusp
 #   => C = C_cusp * (color.l / L_cusp)
+#
 # and in the upper half case:
 #   (color.l, C) = (L_cusp, C_cusp) * (1 - t2) + t2 * (1, 0)
-#   => (color.l, C) - (L_cusp, C_cusp) = t2 * ((1, 0) - (L_cusp, C_cusp))
+#   => (color.l, C) - (L_cusp, C_cusp) = t2 * ((1, 0)
+#                                              - (L_cusp, C_cusp))
 #   => t2 = ((color.l, C) - (L_cusp, C_cusp)) / (1 - L_cusp, -C_cusp)
 #       where L_cusp != 1 && C_cusp != 0
 #   => (C - C_cusp) / C_cusp = (L_cusp - color.l) / (1 - L_cusp)
@@ -349,13 +374,13 @@ def _find_gamut_intersection(L1, C1,
 #           = C_cusp * (1 + (L_cusp - color.l) / (1 - L_cusp))
 #           = C_cusp * (1 - color.l) / (1 - L_cusp)
 #
-###############################################################################
+########################################################################
 def _find_chroma_max(color):
     # First, get the cusp
     cusp = find_cusp(color=color)
 
-    # Next, we consider whether our lightness places us in the upper or lower
-    #   half:
+    # Next, we consider whether our lightness places us in the upper or
+    # lower half:
     if color.l <= cusp.l:
         # Lower half
         C = cusp.c * (color.l / cusp.l)
@@ -366,26 +391,32 @@ def _find_chroma_max(color):
         # Correct for the concavity of the upper half. 
         C = _find_gamut_intersection(color.l, C,
                                      color=color,
-                                     method='preserve_lightness').c
+                                     method='preserve_lightness'
+                                    ).c
 
     return C
+
 
 ###############################################################################
 #
 # For the second of our two functions, we take some color with lightness
-#   color.l which is between the minimum and maximum possible in-gamut
-#   lightness for the given chroma color.c and hue color.h. These can be used
-#   to perform relative operations on a color's lightness. 
+# color.l which is between the minimum and maximum possible in-gamut
+# lightness for the given chroma color.c and hue color.h. These can be
+# used to perform relative operations on a color's lightness.
+#
 # Therefore, this function solves for lightness L given C1 == color.c:
 # => C = color.c
+#
 # then in the lower half case:
 #   (L, color.c) = t2 * (L_cusp, C_cusp)
 #   => t2 = (L, color.c) / (L_cusp, C_cusp) where (L_cusp, C_cusp) != 0
 #   => L / L_cusp = color.c / C_cusp
 #   => L = L_cusp * (color.c / C_cusp)
+#
 # and in the upper half case:
 #   (L, color.c) = (L_cusp, C_cusp) * (1 - t2) + t2 * (1, 0)
-#   => (L, color.c) - (L_cusp, C_cusp) = t2 * ((1, 0) - (L_cusp, C_cusp))
+#   => (L, color.c) - (L_cusp, C_cusp) = t2 * ((1, 0)
+#                                              - (L_cusp, C_cusp))
 #   => t2 = ((L, color.c) - (L_cusp, C_cusp)) / (1 - L_cusp, -C_cusp)
 #           where L_cusp != 1 && C_cusp != 0
 #   => (L - L_cusp) / (1 - L_cusp) = (C_cusp - color.c) / C_cusp
@@ -393,8 +424,8 @@ def _find_chroma_max(color):
 #   => L = (1 - L_cusp) * (1 - color.c / C_cusp) + L_cusp
 #   => L = 1 - (1 - L_cusp) * (color.c / C_cusp)
 #
-# Since the lightness intersects at two points, we are interested in both the
-#   lower half and the upper half. 
+# Since the lightness intersects at two points, we are interested in
+# both the lower half and the upper half.
 #
 ###############################################################################
 def _find_lightness_bounds(color):
@@ -408,54 +439,62 @@ def _find_lightness_bounds(color):
     L2 = 1 - (1 - cusp.l) * (color.c / cusp.c)
 
     # Correct for the concavity of the upper half. 
-    # By manually setting L0 to an arbitrarily large negative number, we can
-    #   easily approximate moving horizontally. 
+    #
+    # By manually setting L0 to an arbitrarily large negative number,
+    # we can easily approximate moving horizontally.
     L2 = _find_gamut_intersection(L2, color.c,
                                   color=color,
                                   method='manual',
-                                  L0=-1000).l
+                                  L0=-1000
+                                 ).l
 
     return (L1, L2)
+
 
 # A simple lerp
 def _lerp(t, a, b):
     return a * (1 - t) + b * t
 
-###############################################################################
+
+########################################################################
 #
 # Public Functions
 #
-###############################################################################
+########################################################################
 #
-# All of the below functions implement a similar function header and type
-#   checking process so that users are able to specify the necessary
-#   information in whatever format is convenient to them, without compromising
-#   the stability of the code.  
-# Generally speaking, a function which requires lightness, hue, or chroma can
-#   receive either explicit values for each, or a color object with the
-#   desired properties. A color object need not be OKLCH, and thus is the
-#   intended way to pass RGB/HEX colors. Many of the functions essentially
-#   exist to tweak one of the characteristics of an OKLCH color by
-#   interpolating within certain bounds, and when that is the case the first
-#   argument is always the parameter for that lerp. Furthermore, a method can
-#   often be specified between relative, which operates from the provided
-#   color to the extremum in-gamut color for the given axis, and absolute,
-#   which only considers the extrema. 
+# All of the below functions implement a similar function header and
+# type checking process so that users are able to specify the necessary
+# information in whatever format is convenient to them, without
+# compromising the stability of the code.
 #
-###############################################################################
+# Generally speaking, a function which requires lightness, hue, or
+# chroma can receive either explicit values for each, or a color object
+# with the desired properties. A color object need not be OKLCH, and
+# thus is the intended way to pass RGB/HEX colors. Many of the functions
+# essentially exist to tweak one of the characteristics of an OKLCH
+# color by interpolating within certain bounds, and when that is the
+# case the first argument is always the parameter for that lerp.
+# Furthermore, a method can often be specified between relative, which
+# operates from the provided color to the extremum in-gamut color for
+# the given axis, and absolute, which only considers the extrema.
+#
+########################################################################
+
 
 # Type-checking used for all of the below:
-def __get_OKLCH_if_color(arg):
+def _get_OKLCH_if_color(arg):
     utils.expect_color(arg)
     return arg.to_OKLCH()
 
-# Lerps the chroma for the given color. Negative t dechromatizes if the method
-#   is relative
-def chromatize(t, 
-               color = None,
-               hue = None,
-               lightness = None,
-               method = 'relative'):
+
+# Lerps the chroma for the given color. Negative t dechromatizes if the
+# method is relative
+def chromatize(t, *,
+               color=None,
+               hue=None,
+               lightness=None,
+               method='relative'
+              ):
 
     assert (color is None) ^ (hue is None), \
             "Exactly one of color or hue must be provided!"
@@ -475,7 +514,7 @@ def chromatize(t,
         color = colors.OKLCH(lightness, 0., hue)
 
     else:
-        color = __get_OKLCH_if_color(color)
+        color = _get_OKLCH_if_color(color)
 
     # Find max chroma
     max = _find_chroma_max(color)
@@ -483,20 +522,23 @@ def chromatize(t,
     if method == 'relative':
         if t < -1 or t > 1:
             raise ValueError(
-                    "t should be in the range [-1,1] for method 'relative'!")
+                    "t should be in the range [-1,1] for method 'relative'!"
+                    )
 
         # Interpolate between current c and maximum
         if t >= 0:
             C = _lerp(t, color.c, max)
 
-        # Negative t means we interpolate towards the minimum (0) instead
+        # Negative t means we interpolate towards the minimum (0)
+        # instead
         else:
             C = _lerp(-t, color.c, 0)
 
     elif method == 'absolute':
         if t < 0 or t > 1:
             raise ValueError(
-                    "t should be in the range [0,1] for method 'absolute'!")
+                    "t should be in the range [0,1] for method 'absolute'!"
+                    )
 
         # In absolute mode we interpolate between minimum (0) and max
         C = _lerp(t, 0, max)
@@ -513,19 +555,22 @@ Valid methods are 'relative' and 'absolute'.""")
         # Clip it into gamut
         return gamut_clip_preserve_lightness(ret)
 
+
 # Simply reverses the direction of chromatize
-def dechromatize(t, 
-                 color = None,
-                 hue = None,
-                 lightness = None,
-                 method = 'relative'):
+def dechromatize(t, *,
+                 color=None,
+                 hue=None,
+                 lightness=None,
+                 method='relative'
+                ):
 
     # Negate t and chromatize
     if method == 'relative':
         return chromatize(-t,
                           color=color,
                           hue=hue,
-                          lightness=lightness)
+                          lightness=lightness
+                         )
 
     # Reverse t and chromatize
     elif method == 'absolute':
@@ -533,45 +578,54 @@ def dechromatize(t,
                           color=color,
                           hue=hue,
                           lightness=lightness,
-                          method='absolute')
+                          method='absolute'
+                         )
 
     else:
         raise ValueError(f"""Unknown method: '{method}'!
 Valid methods are 'relative' and 'absolute'.""")
 
-# Chromatize, while technically more correct, is not a very appealing name, so
-#   detone and tone are provided as aliases.
-def detone(t,
-             color = None,
-             hue = None,
-             lightness = None,
-             method = 'relative'):
+
+# Chromatize, while technically more correct, is not a very appealing
+# name, so detone and tone are provided as aliases.
+def detone(t, *,
+           color=None,
+           hue=None,
+           lightness=None,
+           method='relative'
+          ):
 
     return chromatize(t,
                       color=color,
                       hue=hue,
                       lightness=lightness,
-                      method=method)
+                      method=method
+                     )
 
-def tone(t,
-        color = None,
-        hue = None,
-        lightness = None,
-        method = 'relative'):
+
+def tone(t, *,
+         color=None,
+         hue=None,
+         lightness=None,
+         method='relative'
+        ):
 
     return dechromatize(t,
                         color=color,
                         hue=hue,
                         lightness=lightness,
-                        method=method)
+                        method=method
+                       )
 
-# Lerps the lightness for the given color. Negative t darkens if the method is
-#   relative
-def lighten(t, 
-            color = None,
-            hue = None,
-            chroma = None,
-            method = 'relative'):
+
+# Lerps the lightness for the given color. Negative t darkens if the
+# method is relative
+def lighten(t, *,
+            color=None,
+            hue=None,
+            chroma=None,
+            method='relative'
+           ):
 
     assert (color is None) ^ (hue is None), \
             "Exactly one of color or hue must be provided!"
@@ -591,7 +645,7 @@ def lighten(t,
         color = colors.OKLCH(0.5, chroma, hue)
 
     else:
-        color = __get_OKLCH_if_color(color)
+        color = _get_OKLCH_if_color(color)
 
     # Find the min and max lightness
     bounds = _find_lightness_bounds(color)
@@ -629,19 +683,22 @@ Valid methods are 'relative' and 'absolute'.""")
         # Clip it into gamut
         return _find_gamut_intersection(L, color.c, hue=color.h)
 
+
 # Simply reverses the direction of chromatize
-def darken(t, 
-           color = None,
-           hue = None,
-           chroma = None,
-           method = 'relative'):
+def darken(t, *,
+           color=None,
+           hue=None,
+           chroma=None,
+           method='relative'
+          ):
 
     # Negate t and lighten
     if method == 'relative':
         return lighten(-t,
                        color=color,
                        hue=hue,
-                       chroma=chroma)
+                       chroma=chroma
+                      )
 
     # Reverse t and lighten
     elif method == 'absolute':
@@ -649,18 +706,22 @@ def darken(t,
                        color=color,
                        hue=hue,
                        chroma=chroma,
-                       method='absolute')
+                       method='absolute'
+                      )
 
     else:
         raise ValueError(f"""Unknown method: '{method}'!
 Valid methods are 'relative' and 'absolute'.""")
 
+
 # Linearly interpolate between two colors
+#
 # Hue path is determined by method parameter
-def interpolate(t, color1, color2,
-                method = 'shortest'):
-    color1 = __get_OKLCH_if_color(color1)
-    color2 = __get_OKLCH_if_color(color2)
+def interpolate(t, color1, color2, *,
+                method='shortest'
+               ):
+    color1 = _get_OKLCH_if_color(color1)
+    color2 = _get_OKLCH_if_color(color2)
 
     # Get the lerped parameters
     l = _lerp(t, color1.l, color2.l)
@@ -717,25 +778,30 @@ def interpolate(t, color1, color2,
         # Clip it into gamut
         return gamut_clip_preserve_lightness(ret)
 
+
 # Gamut clipping:
 def gamut_clip_hue_dependent(color):
-    _color = __get_OKLCH_if_color(color)
+    _color = _get_OKLCH_if_color(color)
     if color.is_in_gamut(): return color
 
     return _find_gamut_intersection(_color.l, _color.c, color=_color)
 
+
 def gamut_clip_hue_independent(color):
-    _color = __get_OKLCH_if_color(color)
+    _color = _get_OKLCH_if_color(color)
     if color.is_in_gamut(): return color
 
     return _find_gamut_intersection(_color.l, _color.c,
                                     color=_color,
-                                    method='hue_dependent')
+                                    method='hue_dependent'
+                                   )
+
 
 def gamut_clip_preserve_lightness(color):
-    _color = __get_OKLCH_if_color(color)
+    _color = _get_OKLCH_if_color(color)
     if color.is_in_gamut(): return color
 
     return _find_gamut_intersection(_color.l, _color.c,
                                     color=_color,
-                                    method='preserve_lightness')
+                                    method='preserve_lightness'
+                                   )

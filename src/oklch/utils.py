@@ -1,3 +1,7 @@
+# vim:foldmethod=indent:foldlevel=1
+
+# TODO: __all__
+
 import math
 
 from oklch import colors
@@ -9,7 +13,7 @@ def int_to_hex_string(i):
 
 
 # Rounds using the typical rule of [x.0, x.5) -> x; [x.5, x+1) -> x+1
-def round(f, nDigits=0):
+def round_(f, nDigits=0):
     f *= 10**nDigits
 
     i = int(f)
@@ -26,27 +30,27 @@ def round(f, nDigits=0):
 
 # Rounds down to the given number of digits with no floating point
 # weirdness
-def ceil(f, nDigits=0):
+def ceil_(f, nDigits=0):
     f = math.ceil(f * 10**nDigits) / 10.**nDigits
     return float(format(f, '.' + str(nDigits) + 'f'))
 
 
 # As above, but rounding up
-def floor(f, nDigits=0):
+def floor_(f, nDigits=0):
     f = math.floor(f * 10**nDigits) / 10.**nDigits
     return float(format(f, '.' + str(nDigits) + 'f'))
 
 
 # Prints a color to terminal by setting the terminal background to that
 # color using ANSI control codes
-def _print_to_term(color, CR=True):
+def print_to_term(color, CR=True):
     # If the color is a list or tuple, we recurse through
     if isinstance(color, (list, tuple)):
         for c in color:
             if isinstance(c, (list, tuple)):
-                _print_to_term(c, CR)
+                print_to_term(c, CR)
             else:
-                _print_to_term(c, False)
+                print_to_term(c, False)
         if CR:
             print('')
         return

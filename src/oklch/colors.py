@@ -1,5 +1,7 @@
 # vim:foldmethod=indent:foldlevel=1
 
+# TODO: __all__
+
 import math
 from random import choice
 from sys import maxsize
@@ -8,34 +10,35 @@ import heapq
 from oklch.tools import find_cusp
 from oklch import utils
 
-# The superclass is only used for type-checking and should not be used directly
-class Color: 
-    # These return a dummy color just so to eliminate an annoying warning. 
-    def to_RGB(self): 
-        return RGB(0, 0, 0)
-    def to_HEX(self):
-        return HEX('#000000')
-    def to_OKLAB(self):
-        return OKLAB(0, 0, 0)
-    def to_OKLCH(self):
-        return OKLCH(0, 0, 0)
+
+# The superclass is only used for type-checking and should not be used
+# directly
+class Color:
+    # These return a dummy color just to eliminate an annoying warning.
+    def to_RGB(self): return RGB(0, 0, 0)
+    def to_HEX(self): return HEX('#000000')
+    def to_OKLAB(self): return OKLAB(0, 0, 0)
+    def to_OKLCH(self): return OKLCH(0, 0, 0)
 
     def is_in_gamut(self):
         return self.to_RGB().is_in_gamut()
 
     def __str__(self): return ""
 
-    # Checks that two colors are close
+    # Checks whether two colors are close
     def is_close(self, other):
         return self.to_HEX().hex_code == other.to_HEX().hex_code
+
     # Addition gives the midpoint of the two colors in OKLAB space
     def __add__(self, other):
         utils.expect_color(other)
 
         return self.to_OKLAB() + other.to_OKLAB()
+
     # Negation gives the complement in OKLAB space
     def __neg__(self):
         return self.to_OKLAB().__neg__()
+
     # Subtraction gives the midpoint of self and complement of other
     def __sub__(self, other):
         utils.expect_color(other)
@@ -201,17 +204,19 @@ class Color:
     @staticmethod
     def get_web_color(color_name):
         return HEX(Color.ColorDict[color_name])
+
     @staticmethod
     def get_random_web_color():
         name = choice(list(Color.ColorDict.keys()))
         return name, Color.get_web_color(name)
+
     @staticmethod
     def get_nearest_web_color(color, n=1):
-        if not isinstance(color, Color):
-            raise ValueError(f"Expected color, received '{type(color)}'!")
+        utils.expect_color(color)
         if not (isinstance(n, int) and n > 0):
             raise ValueError("Expected a positive integer," \
-                                + f" received '{type(n)}'!")
+                                + f" received '{type(n)}'!"
+                            )
         color = color.to_OKLCH()
 
         # When n == 1, we can get the result faster by skipping the heap
@@ -234,35 +239,39 @@ class Color:
                 ret.append((t[1], t[2]))
             return ret
 
-###############################################################################
+
+########################################################################
 #
 # Original license for:
-#   - RGB.to_OKLAB()
-#   - RGB._srgb_transfer_function()
-#   - RGB._srgb_transfer_function_inv()
-#   - OKLAB.to_RGB()
+# - RGB.to_OKLAB()
+# - RGB._srgb_transfer_function()
+# - RGB._srgb_transfer_function_inv()
+# - OKLAB.to_RGB()
 #
 #   Copyright (c) 2021 Björn Ottosson
 #   
-#   Permission is hereby granted, free of charge, to any person obtaining a
-#   copy of this software and associated documentation files (the "Software"),
-#   to deal in the Software without restriction, including without limitation
-#   the rights to use, copy, modify, merge, publish, distribute, sublicense,
-#   and/or sell copies of the Software, and to permit persons to whom the
-#   Software is furnished to do so, subject to the following conditions:
+#   Permission is hereby granted, free of charge, to any person
+#   obtaining a copy of this software and associated documentation files
+#   (the "Software"), to deal in the Software without restriction,
+#   including without limitation the rights to use, copy, modify, merge,
+#   publish, distribute, sublicense, and/or sell copies of the Software,
+#   and to permit persons to whom the Software is furnished to do so,
+#   subject to the following conditions:
 #   
 #       The above copyright notice and this permission notice shall be
 #       included in all copies or substantial portions of the Software.
 #   
 #       THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-#       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-#       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#       IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-#       CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-#       TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-#       SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+#       OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+#       NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+#       HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+#       WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+#       FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+#       OTHER DEALINGS IN THE SOFTWARE.
 #
-###############################################################################
+########################################################################
+
 
 # RGB colors represented as triplets
 class RGB(Color):
@@ -276,11 +285,14 @@ class RGB(Color):
 
     def is_close(self, other):
         return super().is_close(other)
+
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
         return super().__add__(other).to_RGB()
+
     def __neg__(self):
         return super().__neg__().to_RGB()
+
     def __sub__(self, other):
         return super().__sub__(other).to_RGB()
 
@@ -290,19 +302,23 @@ class RGB(Color):
     # Type Conversions
     def to_RGB(self):
         return self
+
     def to_HEX(self):
         return HEX("#{:0>2}{:0>2}{:0>2}".format(
-                utils.int_to_hex_string(self.r),
-                utils.int_to_hex_string(self.g),
-                utils.int_to_hex_string(self.b)))
+                    utils.int_to_hex_string(self.r),
+                    utils.int_to_hex_string(self.g),
+                    utils.int_to_hex_string(self.b))
+                  )
 
-    # Functions for converting to linear RGB from standard RGB and vice versa
+    # Functions for converting to linear RGB from standard RGB and vice
+    # versa
     @staticmethod
     def _srgb_transfer_function(x):
         if (x >= 0.0031308):
             return (1.055) * math.pow(x, 1.0/2.4) - 0.055
         else:
             return 12.92 * x
+
     @staticmethod
     def _srgb_transfer_function_inv(x):
         if (x >= 0.04045):
@@ -328,7 +344,9 @@ class RGB(Color):
         return OKLAB(
             0.2104542553*l_ + 0.7936177850*m_ - 0.0040720468*s_,
             1.9779984951*l_ - 2.4285922050*m_ + 0.4505937099*s_,
-            0.0259040371*l_ + 0.7827717662*m_ - 0.8086757660*s_)
+            0.0259040371*l_ + 0.7827717662*m_ - 0.8086757660*s_
+            )
+
     def to_OKLCH(self):
         return self.to_OKLAB().to_OKLCH()
 
@@ -337,10 +355,11 @@ class RGB(Color):
         return max(self.r, self.g, self.b) <= 255 and \
                 min(self.r, self.g, self.b) >= 0
 
+
 # RGB colors represented as hex code
 class HEX(Color):
     def __init__(self, hex_code):
-        if not hex_code[0] == '#':
+        if not hex_code.startswith('#'):
             hex_code = '#' + hex_code
         self.hex_code = hex_code.upper()
 
@@ -349,19 +368,25 @@ class HEX(Color):
 
     def is_close(self, other):
         return super().is_close(other)
-    # Return type for addition and subtraction is type of first operand, unless
-    #   the result is an invalid color, as this could result in a mangled hex
-    #   code which is ambiguous. Therefore, these are left as RGB. 
+
+    # Return type for addition and subtraction is type of first operand,
+    # unless the result is an invalid color, as this could result in a
+    # mangled hex code which is ambiguous. Therefore, these are left as
+    # RGB.
+    #
     # The below function sorts this out:
     @staticmethod
     def __get_valid_hex_or_rgb(color):
         if color.is_in_gamut():
             return color.to_HEX()
         else: return color.to_RGB()
+
     def __add__(self, other):
         return self.__get_valid_hex_or_rgb(super().__add__(other))
+
     def __neg__(self):
         return self.__get_valid_hex_or_rgb(super().__neg__())
+
     def __sub__(self, other):
         return self.__get_valid_hex_or_rgb(super().__sub__(other))
 
@@ -373,17 +398,22 @@ class HEX(Color):
         return RGB(
             int(self.hex_code[1:3], 16),
             int(self.hex_code[3:5], 16),
-            int(self.hex_code[5:7], 16))
+            int(self.hex_code[5:7], 16)
+            )
+
     def to_HEX(self):
         return self
+
     def to_OKLAB(self):
         return self.to_RGB().to_OKLAB()
+
     def to_OKLCH(self):
         return self.to_RGB().to_OKLCH()
 
     # Check whether the color is in-gamut
     def is_in_gamut(self):
         return super().is_in_gamut()
+
 
 # OKLAB colors represented as triplets
 class OKLAB(Color):
@@ -397,6 +427,7 @@ class OKLAB(Color):
 
     def is_close(self, other):
         return super().is_close(other)
+
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
         l = 0.5*(self.l + other.l)
@@ -406,6 +437,7 @@ class OKLAB(Color):
         return OKLAB(l, a, b)
     def __neg__(self):
         return OKLAB(1-self.l, -self.a, -self.b)
+
     def __sub__(self, other):
         return self + other.__neg__()
 
@@ -423,19 +455,29 @@ class OKLAB(Color):
         s = s_*s_*s_
 
         return RGB(
-            utils.round(RGB._srgb_transfer_function(+4.0767416621 * l \
-                    - 3.3077115913 * m \
-                    + 0.2309699292 * s) * 255),
-            utils.round(RGB._srgb_transfer_function(-1.2684380046 * l \
-                    + 2.6097574011 * m \
-                    - 0.3413193965 * s) * 255),
-            utils.round(RGB._srgb_transfer_function(-0.0041960863 * l \
-                    - 0.7034186147 * m \
-                    + 1.7076147010 * s) * 255))
+            utils.round_(RGB._srgb_transfer_function(
+                            +4.0767416621 * l \
+                            - 3.3077115913 * m \
+                            + 0.2309699292 * s) * 255
+                        ),
+            utils.round_(RGB._srgb_transfer_function(
+                            -1.2684380046 * l \
+                            + 2.6097574011 * m \
+                            - 0.3413193965 * s) * 255
+                        ),
+            utils.round_(RGB._srgb_transfer_function(
+                            -0.0041960863 * l \
+                            - 0.7034186147 * m \
+                            + 1.7076147010 * s) * 255
+                        )
+                  )
+
     def to_HEX(self):
         return self.to_RGB().to_HEX()
+
     def to_OKLAB(self):
         return self
+
     def to_OKLCH(self):
         c = math.pow(self.a ** 2 + self.b ** 2, 0.5)
         h = math.degrees(math.atan2(self.b, self.a))
@@ -446,6 +488,7 @@ class OKLAB(Color):
 
     def is_in_gamut(self):
         return super().is_in_gamut()
+
 
 # OKLCH colors represented as triplets
 class OKLCH(Color):
@@ -459,11 +502,14 @@ class OKLCH(Color):
 
     def is_close(self, other):
         return super().is_close(other)
+
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
         return super().__add__(other).to_OKLCH()
+
     def __neg__(self):
         return super().__neg__().to_OKLCH()
+
     def __sub__(self, other):
         return super().__sub__(other).to_OKLCH()
 
@@ -473,6 +519,7 @@ class OKLCH(Color):
     # Type Conversions
     def to_RGB(self):
         return self.to_OKLAB().to_RGB()
+
     def to_HEX(self):
         return self.to_RGB().to_HEX()
 
@@ -482,10 +529,12 @@ class OKLCH(Color):
         b = math.sin(math.radians(hue))
 
         return a, b
+
     def to_OKLAB(self):
         a, b = self._get_normalized_ab(self.h)
 
         return OKLAB(self.l, a * self.c, b * self.c)
+
     def to_OKLCH(self):
         return self
 
@@ -493,18 +542,20 @@ class OKLCH(Color):
     def is_in_gamut(self):
         return super().is_in_gamut()
 
-    # Returns a css string which rounds in such a way as to guarantee an
-    #   in-gamut color (presuming the original color was in-gamut, of course)
+    # Returns a css string which rounds in such a way as to guarantee
+    # an in-gamut color (presuming the original color was in-gamut, of
+    # course)
     def css_string(self):
         # Find which way is safe to round l
         cusp = find_cusp(hue=self.h)
         if self.l > cusp.l:
-            l = utils.floor(self.l, 4)
+            l = utils.floor_(self.l, 4)
         else:
-            l = utils.ceil(self.l, 4)
+            l = utils.ceil_(self.l, 4)
 
         # Always safe to floor c
-        c = utils.floor(self.c, 3)
+        c = utils.floor_(self.c, 3)
 
-        # Doesn't matter how h is rounded; it can go directly in format string
+        # Doesn't matter how h is rounded; it can go directly in format
+        # string
         return "oklch({:.2%} {:.3f} {:.2f})".format(l, c, self.h)
