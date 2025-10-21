@@ -12,14 +12,11 @@ def int_to_hex_string(i):
     return hex(i)[2:].upper()
 
 
-# Rounds using the typical rule of [x.0, x.5) -> x; [x.5, x+1) -> x+1
-def round_(f, nDigits=0):
+# Rounds using the typical rule of [x.0, x.5) -> x; [x.5, x+1] -> x+1
+def _round_(f, nDigits=0):
     f *= 10**nDigits
 
-    i = int(f)
-    mod = f - i
-    if (mod >= 0.5):
-        i += 1
+    i = int(f+0.5)
 
     if nDigits:
         i /= (10.**nDigits)
@@ -30,13 +27,13 @@ def round_(f, nDigits=0):
 
 # Rounds down to the given number of digits with no floating point
 # weirdness
-def ceil_(f, nDigits=0):
+def _ceil_(f, nDigits=0):
     f = math.ceil(f * 10**nDigits) / 10.**nDigits
     return float(format(f, '.' + str(nDigits) + 'f'))
 
 
 # As above, but rounding up
-def floor_(f, nDigits=0):
+def _floor_(f, nDigits=0):
     f = math.floor(f * 10**nDigits) / 10.**nDigits
     return float(format(f, '.' + str(nDigits) + 'f'))
 

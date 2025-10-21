@@ -455,17 +455,17 @@ class OKLAB(Color):
         s = s_*s_*s_
 
         return RGB(
-            utils.round_(RGB._srgb_transfer_function(
+            utils._round_(RGB._srgb_transfer_function(
                             +4.0767416621 * l \
                             - 3.3077115913 * m \
                             + 0.2309699292 * s) * 255
                         ),
-            utils.round_(RGB._srgb_transfer_function(
+            utils._round_(RGB._srgb_transfer_function(
                             -1.2684380046 * l \
                             + 2.6097574011 * m \
                             - 0.3413193965 * s) * 255
                         ),
-            utils.round_(RGB._srgb_transfer_function(
+            utils._round_(RGB._srgb_transfer_function(
                             -0.0041960863 * l \
                             - 0.7034186147 * m \
                             + 1.7076147010 * s) * 255
@@ -549,12 +549,12 @@ class OKLCH(Color):
         # Find which way is safe to round l
         cusp = find_cusp(hue=self.h)
         if self.l > cusp.l:
-            l = utils.floor_(self.l, 4)
+            l = utils._floor_(self.l, 4)
         else:
-            l = utils.ceil_(self.l, 4)
+            l = utils._ceil_(self.l, 4)
 
         # Always safe to floor c
-        c = utils.floor_(self.c, 3)
+        c = utils._floor_(self.c, 3)
 
         # Doesn't matter how h is rounded; it can go directly in format
         # string
