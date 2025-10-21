@@ -624,7 +624,8 @@ def lighten(t, *,
             color=None,
             hue=None,
             chroma=None,
-            method='relative'
+            method='relative',
+            use_Lr=False
            ):
 
     assert (color is None) ^ (hue is None), \
@@ -650,6 +651,14 @@ def lighten(t, *,
     # Find the min and max lightness
     bounds = _find_lightness_bounds(color)
 
+    # Perform transform if using Lr
+    if use_Lr:
+        L = color.get_Lr()
+        bounds = (colors.OKLAB._Lr_transform(bounds[0]),
+                  colors.OKLAB._Lr_transform(bounds[1]))
+    else:
+        L = color.l
+
     if method == 'relative':
         if t < -1 or t > 1:
             raise ValueError(
@@ -657,11 +666,11 @@ def lighten(t, *,
 
         # Interpolate between current l and maximum
         if t >= 0:
-            L = _lerp(t, color.l, bounds[1])
+            L = _lerp(t, L, bounds[1])
 
         # Negative t means we interpolate towards the minimum instead
         else:
-            L = _lerp(-t, color.l, bounds[0])
+            L = _lerp(-t, L, bounds[0])
 
     elif method == 'absolute':
         if t < 0 or t > 1:
@@ -675,13 +684,18 @@ def lighten(t, *,
         raise ValueError(f"""Unknown method: '{method}'!
 Valid methods are 'relative' and 'absolute'.""")
 
-    ret = colors.OKLCH(L, color.c, color.h)
+    # Transform result back
+    if use_Lr:
+        ret = color.set_Lr(L)
+    else:
+        ret = colors.OKLCH(L, color.c, color.h)
+
     # Make sure that the color is in-gamut
     if ret.is_in_gamut():
         return ret
     else:
         # Clip it into gamut
-        return _find_gamut_intersection(L, color.c, hue=color.h)
+        return _find_gamut_intersection(ret.l, color.c, hue=color.h)
 
 
 # Simply reverses the direction of chromatize
@@ -689,7 +703,8 @@ def darken(t, *,
            color=None,
            hue=None,
            chroma=None,
-           method='relative'
+           method='relative',
+           use_Lr=False
           ):
 
     # Negate t and lighten
@@ -697,7 +712,8 @@ def darken(t, *,
         return lighten(-t,
                        color=color,
                        hue=hue,
-                       chroma=chroma
+                       chroma=chroma,
+                       use_Lr=use_Lr
                       )
 
     # Reverse t and lighten
@@ -706,7 +722,8 @@ def darken(t, *,
                        color=color,
                        hue=hue,
                        chroma=chroma,
-                       method='absolute'
+                       method='absolute',
+                       use_Lr=use_Lr
                       )
 
     else:

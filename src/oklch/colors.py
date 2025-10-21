@@ -428,6 +428,27 @@ class OKLAB(Color):
     def is_close(self, other):
         return super().is_close(other)
 
+    # Get transformed lightness as described in:
+    #   https://bottosson.github.io/posts/colorpicker/
+    _k1, _k2 = 0.206, 0.03
+    _k3 = (1+_k1)/(1+_k2)
+
+    @staticmethod
+    def _Lr_transform(L):
+        return (OKLAB._k3*L - OKLAB._k1 +
+                math.sqrt(math.pow(OKLAB._k3*L - OKLAB._k1, 2) +
+                          4*OKLAB._k2*OKLAB._k3*L))/2
+
+    @staticmethod
+    def _inv_Lr_transform(Lr):
+        return Lr*(Lr + OKLAB._k1)/(OKLAB._k3*(Lr + OKLAB._k2))
+
+    def get_Lr(self):
+        return self._Lr_transform(self.l)
+
+    def set_Lr(self, Lr):
+        return OKLAB(self._inv_Lr_transform(Lr), self.a, self.b)
+
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
         l = 0.5*(self.l + other.l)
@@ -502,6 +523,14 @@ class OKLCH(Color):
 
     def is_close(self, other):
         return super().is_close(other)
+
+    # Get transformed lightness as described in:
+    #   https://bottosson.github.io/posts/colorpicker/
+    def get_Lr(self):
+        return OKLAB._Lr_transform(self.l)
+
+    def set_Lr(self, Lr):
+        return OKLCH(OKLAB._inv_Lr_transform(Lr), self.c, self.h)
 
     # Return type for addition and subtraction is type of first operand
     def __add__(self, other):
