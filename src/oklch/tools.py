@@ -24,7 +24,7 @@ from oklch import colors, utils
 ########################################################################
 #
 #   Copyright (c) 2021 Björn Ottosson
-#   
+#
 #   Permission is hereby granted, free of charge, to any person
 #   obtaining a copy of this software and associated documentation files
 #   (the "Software"), to deal in the Software without restriction,
@@ -32,10 +32,10 @@ from oklch import colors, utils
 #   publish, distribute, sublicense, and/or sell copies of the Software,
 #   and to permit persons to whom the Software is furnished to do so,
 #   subject to the following conditions:
-#   
+#
 #       The above copyright notice and this permission notice shall be
 #       included in all copies or substantial portions of the Software.
-#   
+#
 #       THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 #       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 #       OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -50,7 +50,7 @@ from oklch import colors, utils
 
 def _max_saturation(a, b):
     # Max saturation will be when one of r, g or b goes below zero.
-    
+
     # Select different coefficients depending on which component goes
     # below zero first
     if (-1.88170328 * a - 0.80936493 * b > 1):
@@ -131,7 +131,7 @@ def _max_saturation(a, b):
 
 # Although this function is primarily a translation of Ottosson's work,
 # it is also a public function and therefore follows the convention set
-# by the other public functions found later in this module -- that
+# by the other public functions found later in this package -- that
 # convention being to allow the user choice about how they provide the
 # minimum necessary information for the function. More can be found
 # with the other public functions below.
@@ -142,7 +142,7 @@ def _max_saturation(a, b):
 #
 # finds L_cusp and C_cusp for a given hue
 def find_cusp(*, hue=None, color=None):
-    # Either color or hue may be provided, but exactly one is required. 
+    # Either color or hue may be provided, but exactly one is required.
     assert (hue is None) ^ (color is None), \
             "Exactly one of color or hue must be provided!"
 
@@ -159,7 +159,7 @@ def find_cusp(*, hue=None, color=None):
 
     # a and b must be normalized so a^2 + b^2 == 1
     a, b = colors.OKLCH._get_normalized_ab(hue)
-  
+
     # First, find the maximum saturation (saturation S = C/L)
     S_cusp = _max_saturation(a, b)
 
@@ -193,7 +193,7 @@ def _find_gamut_intersection(L1, C1, *,
                              method='hue_dependent'
                             ):
 
-    # Either color or hue may be provided, but exactly one is required. 
+    # Either color or hue may be provided, but exactly one is required.
     assert (color is None) ^ (hue is None), \
             "Exactly one of color or hue must be provided!"
 
@@ -219,7 +219,7 @@ def _find_gamut_intersection(L1, C1, *,
         #   out-of-gamut, resulting in an infinite loop.
         cusp = colors.HEX('#023BFB').to_OKLCH()
 
-    # Manual method allows for an explicit L0 value. 
+    # Manual method allows for an explicit L0 value.
     if method == 'manual':
         assert L0 is not None, \
                 "L0 must be explicitly provided with method 'manual'!"
@@ -227,7 +227,7 @@ def _find_gamut_intersection(L1, C1, *,
         assert L0 is None, \
                 "L0 cannot be set explicitly unless using method 'manual'!"
 
-        # The other methods specify how L0 should be set. 
+        # The other methods specify how L0 should be set.
         #
         # Method 'hue_dependent' moves the color towards the point
         # (cusp.l, 0, hue) until it intersects the gamut, which is
@@ -337,7 +337,7 @@ def _find_gamut_intersection(L1, C1, *,
 #   C = color.c * (1 - t1) + t1 * C1
 # where either L1 == color.l or C1 == color.c. These are useful points
 # for performing lightening or saturating operations within a given hue.
-# 
+#
 # This differs from the above function in the C term, as for our
 # purposes C0 may not be equal to 0. This adds an additional unknown,
 # but when considering the additional constraints:
@@ -345,7 +345,7 @@ def _find_gamut_intersection(L1, C1, *,
 #       OR
 #   (L, C) = (L_cusp, C_cusp) * (1 - t2) + t2 * (1, 0); (upper half)
 # we end up with five unknowns and five functions nonetheless.
-# 
+#
 ########################################################################
 #
 # For the first of our two functions, we take some color with chroma
@@ -388,7 +388,7 @@ def _find_chroma_max(color):
         # Upper half
         C = cusp.c * (1 - color.l) / (1 - cusp.l)
 
-        # Correct for the concavity of the upper half. 
+        # Correct for the concavity of the upper half.
         C = _find_gamut_intersection(color.l, C,
                                      color=color,
                                      method='preserve_lightness'
@@ -438,7 +438,7 @@ def _find_lightness_bounds(color):
     # Upper half
     L2 = 1 - (1 - cusp.l) * (color.c / cusp.c)
 
-    # Correct for the concavity of the upper half. 
+    # Correct for the concavity of the upper half.
     #
     # By manually setting L0 to an arbitrarily large negative number,
     # we can easily approximate moving horizontally.
