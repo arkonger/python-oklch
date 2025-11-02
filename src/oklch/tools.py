@@ -388,6 +388,11 @@ def _find_chroma_max(color):
         # Upper half
         C = cusp.c * (1 - color.l) / (1 - cusp.l)
 
+        # If C is zero, we can get a divide by zero with preserve_lightness;
+        # therefore, we give it a tiny nudge
+        if C == 0:
+            C = 0.0001
+
         # Correct for the concavity of the upper half.
         C = _find_gamut_intersection(color.l, C,
                                      color=color,
